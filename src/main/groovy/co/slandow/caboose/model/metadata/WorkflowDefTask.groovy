@@ -1,4 +1,4 @@
-package co.slandow.caboose.model
+package co.slandow.caboose.model.metadata
 
 class WorkflowDefTask {
 

@@ -1,4 +1,4 @@
-package co.slandow.caboose.model
+package co.slandow.caboose.model.metadata
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import org.springframework.data.annotation.Id

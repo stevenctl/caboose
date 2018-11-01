@@ -1,8 +1,8 @@
 package co.slandow.caboose.service.metadata
 
-import co.slandow.caboose.model.TaskType
-import co.slandow.caboose.model.WorkflowDef
-import co.slandow.caboose.model.WorkflowDefTask
+import co.slandow.caboose.model.metadata.TaskType
+import co.slandow.caboose.model.metadata.WorkflowDef
+import co.slandow.caboose.model.metadata.WorkflowDefTask
 import co.slandow.caboose.repo.WorkflowDefRepo
 import co.slandow.caboose.service.metadata.impl.WorkflowDefServiceImpl
 import org.junit.Before
@@ -36,7 +36,7 @@ class WorkflowDefServiceTest {
         // Given
         final WF_NAME = "my_workflow"
         when(workflowDefRepo.findByName(WF_NAME))
-                .thenReturn((0..2).collect({new WorkflowDef(name: WF_NAME, version: it)}) as List<WorkflowDef>)
+                .thenReturn((0..2).collect({ new WorkflowDef(name: WF_NAME, version: it) }) as List<WorkflowDef>)
         // When
         final wf = service.getWorkflowDef(WF_NAME)
 
@@ -60,7 +60,7 @@ class WorkflowDefServiceTest {
     void getWorkflowDefsReturnsDefsInDescendingVersionOrder() {
         // Given
         final WF_NAME = "my_workflow"
-        final WORKFLOWS = (0..4).collect({ new WorkflowDef(name: "${WF_NAME}_$it", version: it)}) as List<WorkflowDef>
+        final WORKFLOWS = (0..4).collect({ new WorkflowDef(name: "${WF_NAME}_$it", version: it) }) as List<WorkflowDef>
 
         when(workflowDefRepo.findAll()).thenReturn(WORKFLOWS)
 

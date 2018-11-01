@@ -1,6 +1,6 @@
 package co.slandow.caboose.service.metadata
 
-import co.slandow.caboose.model.WorkflowDef
+import co.slandow.caboose.model.metadata.WorkflowDef
 
 interface WorkflowDefService {
 
