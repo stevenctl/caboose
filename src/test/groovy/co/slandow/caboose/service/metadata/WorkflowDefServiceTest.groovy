@@ -1,9 +1,9 @@
 package co.slandow.caboose.service.metadata
 
+import co.slandow.caboose.exception.InvalidWorkflowException
 import co.slandow.caboose.model.metadata.TaskType
 import co.slandow.caboose.model.metadata.WorkflowDef
 import co.slandow.caboose.model.metadata.WorkflowDefTask
-import co.slandow.caboose.repo.WorkflowDefRepo
 import co.slandow.caboose.service.metadata.impl.WorkflowDefServiceImpl
 import org.junit.Before
 import org.junit.Test
@@ -11,8 +11,10 @@ import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
 import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.PageRequest
+import org.springframework.data.mongodb.core.MongoOperations
 
+import static co.slandow.caboose.util.MongoUtil.buildPagedQuery
+import static co.slandow.caboose.util.MongoUtil.buildQuery
 import static junit.framework.TestCase.*
 import static org.mockito.Mockito.verify
 import static org.mockito.Mockito.when
@@ -21,7 +23,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times
 class WorkflowDefServiceTest {
 
     @Mock
-    WorkflowDefRepo workflowDefRepo
+    MongoOperations workflowDefRepo
 
     @InjectMocks
     WorkflowDefService service = new WorkflowDefServiceImpl()
@@ -35,7 +37,7 @@ class WorkflowDefServiceTest {
     void getWorkflowDefByNameReturnsLatestVersion() {
         // Given
         final WF_NAME = "my_workflow"
-        when(workflowDefRepo.findByName(WF_NAME))
+        when(workflowDefRepo.find(buildQuery([name: WF_NAME]), WorkflowDef))
                 .thenReturn((0..2).collect({ new WorkflowDef(name: WF_NAME, version: it) }) as List<WorkflowDef>)
         // When
         final wf = service.getWorkflowDef(WF_NAME)
@@ -62,7 +64,7 @@ class WorkflowDefServiceTest {
         final WF_NAME = "my_workflow"
         final WORKFLOWS = (0..4).collect({ new WorkflowDef(name: "${WF_NAME}_$it", version: it) }) as List<WorkflowDef>
 
-        when(workflowDefRepo.findAll()).thenReturn(WORKFLOWS)
+        when(workflowDefRepo.findAll(WorkflowDef)).thenReturn(WORKFLOWS)
 
         // When
         final wfs = service.getWorkflowDefs()
@@ -80,7 +82,7 @@ class WorkflowDefServiceTest {
         final WF_NAME = "my_workflow"
         final WORKFLOWS = (0..PAGE_SIZE - 1).collect({ new WorkflowDef(name: "${WF_NAME}_$it") }) as List<WorkflowDef>
 
-        when(workflowDefRepo.findAll(new PageRequest(0, PAGE_SIZE))).thenReturn(new PageImpl<WorkflowDef>(WORKFLOWS))
+        when(workflowDefRepo.find(buildPagedQuery(0, PAGE_SIZE), WorkflowDef)).thenReturn(WORKFLOWS)
 
         // When
         final wfs = service.getWorkflowDefs(0, 10)
@@ -106,10 +108,31 @@ class WorkflowDefServiceTest {
         service.saveWorkflowDef(WF_DEF)
 
         // Then
-        verify(workflowDefRepo, times(1)).save(WF_DEF)
+        verify(workflowDefRepo, times(1)).insert(WF_DEF)
     }
 
-    @Test(expected = IllegalArgumentException)
+    @Test(expected = InvalidWorkflowException)
+    void saveWorkflowDefFailsWhenSameVersionExists(){
+        // Given
+        final WF_DEF = new WorkflowDef(
+                version: 1,
+                tasks: [new WorkflowDefTask(
+                        name: "my_task",
+                        taskReferenceName: "my_task_in_wf",
+                        type: TaskType.SIMPLE)
+                ]
+        )
+
+        when(workflowDefRepo.insert(WorkflowDef)).thenThrow(new InvalidWorkflowException("already exists"))
+
+        // When
+        service.saveWorkflowDef(WF_DEF)
+
+        // Then exception is thrown
+    }
+
+
+    @Test(expected = InvalidWorkflowException)
     void saveWorkflowDefFailsWhenNameIsMissing() {
         // Given
         final WF_DEF = new WorkflowDef(
@@ -127,7 +150,7 @@ class WorkflowDefServiceTest {
         // Then exception is thrown
     }
 
-    @Test(expected = IllegalArgumentException)
+    @Test(expected = InvalidWorkflowException)
     void saveWorkflowDefFailsWhenVersionIsMissing() {
         // Given
         final WF_DEF = new WorkflowDef(
@@ -146,7 +169,7 @@ class WorkflowDefServiceTest {
     }
 
 
-    @Test(expected = IllegalArgumentException)
+    @Test(expected = InvalidWorkflowException)
     void saveWorkflowDefFailsWhenTasksAreMissing() {
         // Given
         final WF_DEF = new WorkflowDef(
@@ -160,7 +183,7 @@ class WorkflowDefServiceTest {
         // Then exception is thrown
     }
 
-    @Test(expected = IllegalArgumentException)
+    @Test(expected = InvalidWorkflowException)
     void saveWorkflowDefFailsTasksAreInvalid() {
         // Given
         final WF_DEF = new WorkflowDef(

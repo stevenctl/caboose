@@ -1,18 +1,18 @@
 package co.slandow.caboose.service.metadata
 
 import co.slandow.caboose.model.metadata.TaskDef
-import co.slandow.caboose.repo.TaskDefRepo
 import co.slandow.caboose.service.metadata.impl.TaskDefServiceImpl
 import org.junit.Before
 import org.junit.Test
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.MockitoAnnotations
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.PageRequest
+import org.springframework.data.mongodb.core.MongoOperations
 
 import static co.slandow.caboose.model.metadata.RetryLogic.FIXED
 import static co.slandow.caboose.model.metadata.TimeoutPolicy.RETRY
+import static co.slandow.caboose.util.MongoUtil.buildPagedQuery
+import static co.slandow.caboose.util.MongoUtil.buildQuery
 import static junit.framework.TestCase.*
 import static org.mockito.Mockito.verify
 import static org.mockito.Mockito.when
@@ -21,7 +21,7 @@ import static org.mockito.internal.verification.VerificationModeFactory.times
 class TaskDefServiceTest {
 
     @Mock
-    TaskDefRepo TaskDefRepo
+    MongoOperations repo
 
     @InjectMocks
     TaskDefService service = new TaskDefServiceImpl()
@@ -35,7 +35,7 @@ class TaskDefServiceTest {
     void getTaskDefByName() {
         // Given
         final TASK_NAME = "my_task"
-        when(TaskDefRepo.findByName(TASK_NAME)).thenReturn(new TaskDef(name: TASK_NAME))
+        when(repo.findOne(buildQuery([name: TASK_NAME]), TaskDef)).thenReturn(new TaskDef(name: TASK_NAME))
 
         // When
         final taskDef = service.getTaskDef(TASK_NAME)
@@ -60,7 +60,7 @@ class TaskDefServiceTest {
         // Given
         final TASKS = (0..4).collect({ new TaskDef(name: "my_task_${it}") }) as List<TaskDef>
 
-        when(TaskDefRepo.findAll()).thenReturn(TASKS)
+        when(repo.findAll(TaskDef)).thenReturn(TASKS)
 
         // When
         final tasks = service.getTaskDefs()
@@ -76,7 +76,7 @@ class TaskDefServiceTest {
         final TASK_NAME = "my_workflow"
         final TASKS = (0..PAGE_SIZE - 1).collect({ new TaskDef(name: "${TASK_NAME}_$it") }) as List<TaskDef>
 
-        when(TaskDefRepo.findAll(new PageRequest(0, PAGE_SIZE))).thenReturn(new PageImpl<TaskDef>(TASKS))
+        when(repo.find(buildPagedQuery(0, PAGE_SIZE), TaskDef)).thenReturn(TASKS)
 
         // When
         final tasks = service.getTaskDefs(0, 10)
@@ -101,7 +101,7 @@ class TaskDefServiceTest {
         service.saveTaskDef(TASK_DEF)
 
         // Then
-        verify(TaskDefRepo, times(1)).save(TASK_DEF)
+        verify(repo, times(1)).findAndReplace(buildQuery([name: "my_workflow"]), TASK_DEF)
     }
 
     @Test

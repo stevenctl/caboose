@@ -1,7 +1,6 @@
 package co.slandow.caboose.controllers.metadata
 
 import co.slandow.caboose.model.metadata.TaskDef
-import co.slandow.caboose.model.metadata.WorkflowDef
 import co.slandow.caboose.service.metadata.TaskDefService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.*

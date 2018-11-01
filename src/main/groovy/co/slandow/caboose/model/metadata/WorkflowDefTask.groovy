@@ -8,5 +8,6 @@ class WorkflowDefTask {
     String description
     boolean optional = false
     Map<String, String> inputParameters
+    int startDelay
 
 }
